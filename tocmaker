@@ -95,7 +95,8 @@ def default(args):
 
     toc.sort(key=lambda x: x['page'])
 
-    out = toc_to_bk(toc)+other
+    # Seems like overriding everything is a bad idea
+    out = toc_to_bk(toc) # +other
 
     with open(tmp_file, "w") as afile:
         afile.write(out)
