@@ -1,0 +1,143 @@
+#!/usr/bin/python
+
+import os
+import sys
+import re
+import argparse
+
+pattern = re.compile(r'\s*(\d+)\s+(.*?)\s*$')
+
+tmp_file = '/tmp/info.txt'
+
+cmd_dump = 'pdftk {} dump_data output {}'
+cmd_update = 'pdftk {} update_info {} output {}'
+
+bm_block="""BookmarkBegin
+BookmarkTitle: {}
+BookmarkLevel: {}
+BookmarkPageNumber: {}
+"""
+
+def ind(s, tabsize=8):
+    if s.isspace():
+        return 0
+
+    sx = s.expandtabs(tabsize)
+    white_spaces = len(sx) - len(sx.lstrip())
+
+    ind = white_spaces // tabsize
+
+    return ind
+
+def el(line):
+    m=re.match(pattern, line)
+    return {'page': int(m.group(1)), 'title': m.group(2), 'level': ind(line) + 1}
+
+def toc_to_bk(toc):
+    data=''
+    for el in toc:
+        data+=bm_block.format(el['title'],el['level'],el['page'])
+
+    return data
+
+def toc_to_mine(toc):
+    data=''
+    for el in toc:
+        data+=('\t'*(el['level']-1))+str(el['page'])+' '+el['title']+'\n'
+
+    return data
+
+def mine_to_toc(file_name):
+    with open(file_name, "r") as afile:
+        toc = [el(line) for line in afile if not line.isspace()]
+
+    return toc
+
+def bk_to_toc(file_name):
+    with open(file_name, "r") as afile:
+        data = afile.read()
+
+    toc = []
+    curr = {}
+    other = []
+    for line in data.split('\n'):
+        if line.startswith('BookmarkBegin'):
+            if curr: # check if is NOT the first iteration
+                toc.append(curr)
+            curr = {}
+        elif line.startswith('BookmarkTitle'):
+            curr['title'] = line[15:]
+        elif line.startswith('BookmarkLevel'):
+            curr['level'] = int(line[15:])
+        elif line.startswith('BookmarkPageNumber'):
+            curr['page'] = int(line[20:])
+        else:
+           other.append(line)
+
+    if curr:
+        toc.append(curr)
+    other = '\n'.join(other)
+    return [other, toc]
+
+def default(args):
+    bk_file = args.bk_file
+    in_file = args.in_file
+    mode = args.mode
+    out_file = args.in_file+'_temp' if mode == 'override' else args.out_file
+
+    os.system(cmd_dump.format(in_file,tmp_file))
+    other,toc_bk = bk_to_toc(tmp_file)
+
+    toc = mine_to_toc(bk_file)
+
+    if mode != 'override':
+        toc += toc_bk
+
+    toc.sort(key=lambda x: x['page'])
+
+    out = toc_to_bk(toc)+other
+
+    with open(tmp_file, "w") as afile:
+        afile.write(out)
+
+    os.system(cmd_update.format(in_file,tmp_file,out_file))
+
+    if mode == 'override':
+        os.system('mv {} {}'.format(out_file,in_file))
+
+def export_bk(args):
+    bk_file = args.bk_file
+    in_file = args.in_file
+
+    os.system(cmd_dump.format(in_file,tmp_file))
+    other, toc = bk_to_toc(tmp_file)
+
+    out=toc_to_mine(toc)
+
+    with open(bk_file, "w") as afile:
+        afile.write(out)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="""
+    This script helps you modify pdf bookmarks.
+    See help for more details.
+    """)
+
+    parser.add_argument('mode', choices=['create', 'override', 'export'], help="""
+    'create' - Create a new pdf by adding the given bookmarks
+    'override' - Override the given pdf with the given bookmarks
+    'export' - Export the bookmarks of the given pdf
+    """)
+    parser.add_argument('in_file', help='Name of the file to be processed')
+    parser.add_argument('-o','--out_file', help='Name of the output file')
+    parser.add_argument('-b','--bk_file', help='Name of the bookmarks file')
+
+    args = parser.parse_args()
+
+    modes={
+        'create': default,
+        'override': default,
+        'export': export_bk,
+    }
+
+    modes[args.mode](args)
