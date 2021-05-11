@@ -21,8 +21,17 @@ end=`tail -n 1 "$toc_path"`
 tocmaker override "$1" -b "$toc_path"
 
 name=`basename "$1" .pdf`
-[[ "$end" == "end" ]] && {
-	mv "$1" "${path}/${name}_(tok).pdf"
-} || {
-	mv "$1" "${path}/${name}_(prog).pdf"
+stats="${name: -3}"
+
+
+[[ "$stats" == "pro" || "$stats" == "tok" ]] && {
+	name=${name::-4}
+	mv "$1" "${path}/${name}.pdf"
 }
+
+[[ "$end" == "end" ]] && {
+	out_path="${path}/${name}_tok.pdf"
+} || {
+	out_path="${path}/${name}_pro.pdf"
+}
+mv "${path}/${name}.pdf" "$out_path"
