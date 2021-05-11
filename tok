@@ -1,0 +1,17 @@
+#!/bin/bash
+
+date_in=`pdfinfo "$1" | sed -n 's/^CreationDate:\(.*\)$/\1/p'`
+toc_name=`date -d "$date_in" +"%Y-%m-%d.md"`
+
+path=`dirname "$1"`
+toc_path="${path}/toc/$toc_name"
+#nohup st -e nvim "$toc_path" >/dev/null 2>&1 &
+nohup okular "$1" >/dev/null 2>&1 &
+
+nvim "$toc_path" >/dev/null 2>&1
+end=`tail -n 1 "$1"`
+
+tocmaker override "$1" -b "$toc_path"
+
+if [[end=="end"]]; then
+fi

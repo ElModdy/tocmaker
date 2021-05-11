@@ -49,7 +49,7 @@ def toc_to_mine(toc):
 
 def mine_to_toc(file_name):
     with open(file_name, "r") as afile:
-        toc = [el(line) for line in afile if not line.isspace()]
+        toc = [el(line) for line in afile if line.lstrip()[:1].isdigit()]
 
     return toc
 

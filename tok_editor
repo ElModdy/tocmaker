@@ -1,0 +1,15 @@
+#!/bin/bash
+
+date_in=`pdfinfo Lezione15.pdf | sed -n 's/^CreationDate:\(.*\)$/\1/p'`
+toc_name=`date -d "$date_in" +"%Y-%m-%d.md"`
+
+toc_path="`dirname $1`/toc/$toc_name"
+nvim "$toc_path" >/dev/null 2>&1
+end=`tail -n 1 "$1"`
+
+if [[end=="end"]]; then
+
+fi
+
+
+nohup okular $1 >/dev/null 2>&1 &
