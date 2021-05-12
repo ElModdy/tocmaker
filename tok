@@ -5,10 +5,14 @@
 	exit 0
 }
 
+
 date_in=`pdfinfo "$1" | sed -n 's/^CreationDate:\(.*\)$/\1/p'`
 toc_name=`date -d "$date_in" +"%Y-%m-%d.md"`
 
 path=`dirname "$1"`
+name=`basename "$1" .pdf`
+stats="${name: -3}"
+
 toc_path="${path}/toc/$toc_name"
 #nohup st -e nvim "$toc_path" >/dev/null 2>&1 &
 #nohup okular "$1" >/dev/null 2>&1 &
@@ -20,18 +24,15 @@ end=`tail -n 1 "$toc_path"`
 
 tocmaker override "$1" -b "$toc_path"
 
-name=`basename "$1" .pdf`
-stats="${name: -3}"
-
-
 [[ "$stats" == "pro" || "$stats" == "tok" ]] && {
 	name=${name::-4}
 	mv "$1" "${path}/${name}.pdf"
 }
 
+out_path="${path}/${name}_pro.pdf"
+
 [[ "$end" == "end" ]] && {
 	out_path="${path}/${name}_tok.pdf"
-} || {
-	out_path="${path}/${name}_pro.pdf"
 }
+
 mv "${path}/${name}.pdf" "$out_path"

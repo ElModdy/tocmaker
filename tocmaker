@@ -9,8 +9,8 @@ pattern = re.compile(r'\s*(\d+)\s+(.*?)\s*$')
 
 tmp_file = '/tmp/info.txt'
 
-cmd_dump = 'pdftk {} dump_data output {}'
-cmd_update = 'pdftk {} update_info {} output {}'
+cmd_dump = 'pdftk "{}" dump_data output "{}"'
+cmd_update = 'pdftk "{}" update_info "{}" output "{}"'
 
 bm_block="""BookmarkBegin
 BookmarkTitle: {}
