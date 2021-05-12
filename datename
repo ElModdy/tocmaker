@@ -5,17 +5,35 @@ green=`tput setaf 2`
 bold=`tput bold`
 reset=`tput sgr0`
 
+echo -e " ${bold}y${reset}\t\t - Confirm suggestion"
+echo -e " ${bold}<Enter>${reset}\t - Ignore"
+echo -e " ${bold}<Type>${reset}\t\t - Change the name to input"
+
 for f in ./*.pdf; do
 	date_in=`pdfinfo "$f" | sed -n 's/^CreationDate:\(.*\)$/\1/p'`
 	suggested_name=`date -d "$date_in" +"%Y-%m-%d.pdf"`
-	curr_name=`basename $f`
+	curr_name=`basename "$f"`
 
 	[[ "$suggested_name" == "$curr_name" ]] && continue
 
 	echo -e "${bold}${red}curr:${reset}\t${curr_name}"
 	echo -e "${bold}${green}sugg:${reset}\t${suggested_name}"
 	read -p 'Name (empty to confirm): ' ans
-	ans="${ans}.pdf"
-	[[ "$ans" == ".pdf" ]] && ans="$suggested_name"
+
+	case $ans in
+
+		"")
+			continue
+			;;
+
+		"y")
+		 	ans="$suggested_name"
+		 	;;
+
+		*)
+		 	ans="${ans}.pdf"
+		 	;;
+	esac
+
 	mv "$f" "$ans" &> /dev/null
 done
