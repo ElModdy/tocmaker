@@ -13,9 +13,9 @@ path=`dirname "$1"`
 name=`basename "$1" .pdf`
 stats="${name: -3}"
 
-toc_path="${path}/toc/$toc_name"
-#nohup st -e nvim "$toc_path" >/dev/null 2>&1 &
-#nohup okular "$1" >/dev/null 2>&1 &
+toc_path="../toc/$toc_name"
+
+(qpdfview --unique --instance toc "$1" &> /dev/null &)
 
 nvim "$toc_path" # >/dev/null 2>&1
 end=`tail -n 1 "$toc_path"`
