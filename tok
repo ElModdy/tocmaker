@@ -5,15 +5,50 @@
 	exit 0
 }
 
-
-date_in=`pdfinfo "$1" | sed -n 's/^CreationDate:\(.*\)$/\1/p'`
-toc_name=`date -d "$date_in" +"%Y-%m-%d.md"`
+date_in=`pdfinfo "$1" | sed -n 's/^ModDate:\(.*\)$/\1/p'`
+date=`date -d "$date_in" +"%Y-%m-%d"`
 
 path=`dirname "$1"`
 name=`basename "$1" .pdf`
 stats="${name: -3}"
 
-toc_path="../toc/$toc_name"
+[[ "$stats" == "pro" || "$stats" == "tok" ]] && {
+	name=${name::-4}
+}
+
+ans="$name"
+
+if [[ "$name" != "$date" && ! -f "../toc/${name}.md" ]]; then
+	red=`tput setaf 1`
+	green=`tput setaf 2`
+	bold=`tput bold`
+	reset=`tput sgr0`
+
+	echo -e " ${bold}y${reset}\t\t - Confirm suggestion"
+	echo -e " ${bold}<Enter>${reset}\t - Ignore"
+	echo -e " ${bold}<Type>${reset}\t\t - Change the name to input"
+
+	echo -e "${bold}${red}defa:${reset}\t${name}.md"
+	echo -e "${bold}${green}sugg:${reset}\t${date}.md"
+	read -p 'Ans: ' ans
+
+	case $ans in
+
+		"")
+			ans="$name"
+			;;
+
+		"y")
+		 	ans="$date"
+		 	;;
+
+		*)
+		 	ans="$ans"
+		 	;;
+	esac
+fi
+
+toc_path="../toc/${ans}.md"
 
 (qpdfview --unique --instance toc "$1" &> /dev/null &)
 
@@ -24,10 +59,6 @@ end=`tail -n 1 "$toc_path"`
 
 tocmaker override "$1" -b "$toc_path"
 
-[[ "$stats" == "pro" || "$stats" == "tok" ]] && {
-	name=${name::-4}
-	mv "$1" "${path}/${name}.pdf"
-}
 
 out_path="${path}/${name}_pro.pdf"
 
@@ -35,4 +66,4 @@ out_path="${path}/${name}_pro.pdf"
 	out_path="${path}/${name}_tok.pdf"
 }
 
-mv "${path}/${name}.pdf" "$out_path"
+mv "$1" "$out_path"

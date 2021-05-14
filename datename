@@ -15,16 +15,34 @@ cp "${path}blank.pdf" "${path}preview.pdf"
 
 (qpdfview "${path}preview.pdf" &> /dev/null &)
 
+read -p "Press ${bold}<Enter>${reset} to continue"
+
 for f in ./*.pdf; do
-	/bin/cp -rf "$f" "${path}preview.pdf"
-	date_in=`pdfinfo "$f" | sed -n 's/^CreationDate:\(.*\)$/\1/p'`
-	suggested_name=`date -d "$date_in" +"%Y-%m-%d.pdf"`
-	curr_name=`basename "$f"`
+	date_in=`pdfinfo "$f" | sed -n 's/^ModDate:\(.*\)$/\1/p'`
+	date=`date -d "$date_in" +"%Y-%m-%d"`
+	name=`basename "$f" .pdf`
+
+	pdfs+=("${name}@${date}")
+done
+
+
+OIFS=$IFS
+IFS=$'\n'
+sorted=($(sort -n -t "@" -k2.1,2.4 -k2.6,2.7 -k2.9,2.10 <<<"${pdfs[*]}"))
+IFS=$OIFS
+
+for pdf in "${sorted[@]}"
+do
+	tmp=(${pdf//@/ })
+	curr_name="${tmp[0]}"
+	suggested_name="${tmp[1]}"
+
+	/bin/cp -rf "${curr_name}.pdf" "${path}preview.pdf"
 
 	[[ "$suggested_name" == "$curr_name" ]] && continue
 
-	echo -e "${bold}${red}curr:${reset}\t${curr_name}"
-	echo -e "${bold}${green}sugg:${reset}\t${suggested_name}"
+	echo -e "${bold}${red}curr:${reset}\t${curr_name}.pdf"
+	echo -e "${bold}${green}sugg:${reset}\t${suggested_name}.pdf"
 	read -p 'Name (empty to confirm): ' ans
 
 	case $ans in
@@ -38,11 +56,11 @@ for f in ./*.pdf; do
 		 	;;
 
 		*)
-		 	ans="${ans}.pdf"
+		 	ans="$ans"
 		 	;;
 	esac
 
-	mv "$f" "$ans" &> /dev/null
+	mv "${curr_name}.pdf" "${ans}.pdf" &> /dev/null
 done
 
 wmctrl -lp | awk '/preview - qpdfview/{print $3}' |
