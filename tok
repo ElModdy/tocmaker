@@ -10,10 +10,10 @@ date=`date -d "$date_in" +"%Y-%m-%d"`
 
 path=`dirname "$1"`
 name=`basename "$1" .pdf`
-stats="${name: -3}"
+stats="${name: -1}"
 
-[[ "$stats" == "pro" || "$stats" == "tok" ]] && {
-	name=${name::-4}
+[[ "$stats" == "C" ]] && {
+	name=${name::-2}
 }
 
 ans="$name"
@@ -59,11 +59,8 @@ end=`tail -n 1 "$toc_path"`
 
 tocmaker override "$1" -b "$toc_path"
 
-
-out_path="${path}/${name}_pro.pdf"
-
 [[ "$end" == "end" ]] && {
-	out_path="${path}/${name}_tok.pdf"
+	out_path="${path}/${name}_C.pdf"
 }
 
 mv "$1" "$out_path"
