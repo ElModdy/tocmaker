@@ -58,7 +58,7 @@ do
 
 	resize "${curr_name}.pdf"
 
-	read -p 'Name (empty to confirm): ' ans
+	read -p 'Ans: ' ans
 
 	case $ans in
 
