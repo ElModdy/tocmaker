@@ -1,24 +1,45 @@
 #!/bin/bash
 
-function resize {
-	dim=(`pdfinfo "$1" | grep "Page size" | grep -Eo '[-+]?[0-9]*\.?[0-9]+'`)
-	w="${dim[0]}"
-	h="${dim[1]}"
+first_f=true
+first=true
 
-	w_out=5
-	h_out=`bc <<< "scale=2; $w / $h * $w_out"`
+for d in */ ; do
 
-	pdfjam --outfile /tmp/final.pdf --papersize "{${h_out}in,${w_out}in}" "$1" &>/dev/null
+	pdfs=( "${d}"*_C.pdf )
+	(( ${#pdfs[@]} <= 1 )) && continue
 
-}
+	if [[ "$1" == "nd" ]]; then
+		pdftk "${d}"*_C.pdf cat output "${d}/final.pdf" &>/dev/null
+	else
+		for pdf in "${pdfs[@]}"; do
 
-pdfs=(./*_C.pdf)
+			name=$(basename "$pdf" _C.pdf)
+			tocmaker wrap "$pdf" -w "$name" -o "${d}tmp.pdf"
 
-resize "${pdfs[0]}"
-mv /tmp/final.pdf ./final.pdf
+			if $first ; then
+				first=false
+				mv -f "${d}tmp.pdf" "${d}final.pdf"
+			else
+				pdftk "${d}final.pdf" "${d}tmp.pdf" cat output "${d}tmp1.pdf" &>/dev/null
+				mv -f "${d}tmp1.pdf" "${d}final.pdf"
+			fi
+		done
 
-for ((i=1;i<${#pdfs[@]};i++)); do
-	resize "${pdfs[i]}"
-	pdftk final.pdf /tmp/final.pdf cat output final_out.pdf &>/dev/null
-	mv -f final_out.pdf final.pdf
+		rm -f "${d}tmp.pdf" &>/dev/null
+
+	fi
+
+
+	tocmaker wrap "${d}final.pdf" -w "${d%/}" -o tmp.pdf
+
+	if $first_f ; then
+		first_f=false
+		mv -f tmp.pdf final.pdf
+	else
+		pdftk final.pdf tmp.pdf cat output tmp1.pdf &>/dev/null
+		mv -f tmp1.pdf final.pdf
+
+	fi
 done
+
+rm -f tmp.pdf &>/dev/null

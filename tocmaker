@@ -9,7 +9,7 @@ pattern = re.compile(r'\s*(\d+)\s+(.*?)\s*$')
 
 tmp_file = '/tmp/info.txt'
 
-cmd_dump = 'pdftk "{}" dump_data output "{}"'
+cmd_dump = 'pdftk "{}" dump_data_utf8 output "{}"'
 cmd_update = 'pdftk "{}" update_info "{}" output "{}"'
 
 bm_block="""BookmarkBegin
@@ -93,6 +93,7 @@ def default(args):
     if mode != 'override':
         toc += toc_bk
 
+    toc.sort(key=lambda x: x['level'])
     toc.sort(key=lambda x: x['page'])
 
     # Seems like overriding everything is a bad idea
@@ -118,20 +119,50 @@ def export_bk(args):
     with open(bk_file, "w") as afile:
         afile.write(out)
 
+def wrap_pdf(args):
+    in_file = args.in_file
+    wrap_str = args.wrap_str
+    out_file = args.out_file
+
+    os.system(cmd_dump.format(in_file,tmp_file))
+    other,toc = bk_to_toc(tmp_file)
+
+    for i in range(len(toc)):
+        toc[i]['level'] += 1
+
+    toc.sort(key=lambda x: x['level'])
+    toc.sort(key=lambda x: x['page'])
+
+    toc.insert(0,{
+        'page':1,
+        'level':1,
+        'title': wrap_str
+        })
+
+    out = toc_to_bk(toc)
+
+    with open(tmp_file, "w") as afile:
+        afile.write(out)
+
+    os.system(cmd_update.format(in_file,tmp_file,out_file))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="""
     This script helps you modify pdf bookmarks.
     See help for more details.
     """)
 
-    parser.add_argument('mode', choices=['create', 'override', 'export'], help="""
+    parser.add_argument('mode', choices=['create', 'override', 'export', 'wrap'], help="""
     'create' - Create a new pdf by adding the given bookmarks
     'override' - Override the given pdf with the given bookmarks
     'export' - Export the bookmarks of the given pdf
+    'wrap' - Wrap the bookmarks with the given string
     """)
     parser.add_argument('in_file', help='Name of the file to be processed')
     parser.add_argument('-o','--out_file', help='Name of the output file')
     parser.add_argument('-b','--bk_file', help='Name of the bookmarks file')
+    parser.add_argument('-w','--wrap_str', help='Header string')
 
     args = parser.parse_args()
 
@@ -139,6 +170,7 @@ if __name__ == "__main__":
         'create': default,
         'override': default,
         'export': export_bk,
+        'wrap': wrap_pdf,
     }
 
     modes[args.mode](args)

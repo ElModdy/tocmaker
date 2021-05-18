@@ -59,6 +59,8 @@ end=`tail -n 1 "$toc_path"`
 
 tocmaker override "$1" -b "$toc_path"
 
+out_path="${path}/${name}.pdf"
+
 [[ "$end" == "end" ]] && {
 	out_path="${path}/${name}_C.pdf"
 }
