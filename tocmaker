@@ -93,8 +93,8 @@ def default(args):
     if mode != 'override':
         toc += toc_bk
 
-    toc.sort(key=lambda x: x['level'])
-    toc.sort(key=lambda x: x['page'])
+    #toc.sort(key=lambda x: x['level'])
+    #toc.sort(key=lambda x: x['page'])
 
     # Seems like overriding everything is a bad idea
     out = toc_to_bk(toc) # +other
@@ -130,8 +130,8 @@ def wrap_pdf(args):
     for i in range(len(toc)):
         toc[i]['level'] += 1
 
-    toc.sort(key=lambda x: x['level'])
-    toc.sort(key=lambda x: x['page'])
+    #toc.sort(key=lambda x: x['level'])
+    #toc.sort(key=lambda x: x['page'])
 
     toc.insert(0,{
         'page':1,

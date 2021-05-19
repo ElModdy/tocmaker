@@ -1,9 +1,9 @@
 #!/bin/bash
 
 first_f=true
-first=true
 
 for d in */ ; do
+	first=true
 
 	pdfs=( "${d}"*_C.pdf )
 	(( ${#pdfs[@]} <= 1 )) && continue
@@ -14,6 +14,8 @@ for d in */ ; do
 		for pdf in "${pdfs[@]}"; do
 
 			name=$(basename "$pdf" _C.pdf)
+			# Uncomment to also redo all the toc
+			#tocmaker override "$pdf" -b "toc/${name}.md"
 			tocmaker wrap "$pdf" -w "$name" -o "${d}tmp.pdf"
 
 			if $first ; then
