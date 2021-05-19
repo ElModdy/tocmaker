@@ -2,14 +2,21 @@
 
 
 function resize {
-	dim=(`pdfinfo "$1" | grep "Page size" | grep -Eo '[-+]?[0-9]*\.?[0-9]+'`)
+	dim=(`pdfinfo "$1" 2> /dev/null | grep "Page size" | grep -Eo '[-+]?[0-9]*\.?[0-9]+'`)
+
+	[[ $? -eq 1 || ${#dim[@]} -ne 2 ]] && return
 	w="${dim[0]}"
 	h="${dim[1]}"
 
-	w_out=5
-	h_out=`bc <<< "scale=2; $w / $h * $w_out"`
+	if [[ $w -gt $h ]]; then
+		w_out=297
+		h_out=`bc <<< "scale=2; $w / $h * $w_out"`
+	else
+		h_out=297
+		w_out=`bc <<< "scale=2; $h / $w * $h_out"`
+	fi
 
-	pdfjam --outfile "$1" --papersize "{${h_out}in,${w_out}in}" "$1" &>/dev/null
+	pdfjam --outfile "$1" --papersize "{${h_out}mm,${w_out}mm}" "$1" &>/dev/null
 }
 
 red=`tput setaf 1`
@@ -30,8 +37,20 @@ cp "${path}blank.pdf" "${path}preview.pdf"
 read -p "Press ${bold}<Enter>${reset} to continue"
 
 for f in ./*.pdf; do
-	date_in=`pdfinfo "$f" | sed -n 's/^ModDate:\(.*\)$/\1/p'`
-	date=`date -d "$date_in" +"%Y-%m-%d"`
+	pdf_info=`pdfinfo "$1" 2> /dev/null` | sed -n 's/^CreationDate:\(.*\)$/\1/p'`
+	if [[ $? -eq 0  ]];then
+		data_raw=`echo "$pdf_info" | sed -n 's/^CreationDate:\(.*\)$/\1/p'`
+
+		date=`date -d "$date_raw" +"%Y-%m-%d"`
+		if [[ $? -eq 1 ]]; then
+			data_raw=`echo "$pdf_info" | sed -n 's/^ModDate:\(.*\)$/\1/p'`
+
+			date=`date -d "$date_raw" +"%Y-%m-%d"`
+		fi
+	else
+		date="9999-99-99"
+	fi
+
 	name=`basename "$f" .pdf`
 
 	pdfs+=("${name}@${date}")
@@ -51,7 +70,10 @@ do
 
 	/bin/cp -rf "${curr_name}.pdf" "${path}preview.pdf"
 
-	[[ "$suggested_name" == "$curr_name" ]] && continue
+	cl_name=`echo "$curr_name" | sed -rn 's/(.*)?_C/\1/p'`
+
+
+	[[ -f "../toc/${cl_name}.md" || "$curr_name" == "final" || "$curr_name" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}(_pt[0-9]+)?(_C)?$ ]] && continue
 
 	echo -e "${bold}${red}curr:${reset}\t${curr_name}.pdf"
 	echo -e "${bold}${green}sugg:${reset}\t${suggested_name}.pdf"
