@@ -15,7 +15,9 @@ for d in */ ; do
 
 			name=$(basename "$pdf" _C.pdf)
 			# Uncomment to also redo all the toc
-			#tocmaker override "$pdf" -b "toc/${name}.md"
+			tocmaker override "$pdf" -b "toc/${name}.md"
+			############################################
+
 			tocmaker wrap "$pdf" -w "$name" -o "${d}tmp.pdf"
 
 			if $first ; then

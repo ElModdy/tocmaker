@@ -1,0 +1,21 @@
+#!/bin/bash
+
+pdf_info=`pdfinfo "$1" 2> /dev/null`
+if [[ $? -eq 0  ]];then
+	date_raw=`echo "$pdf_info" | sed -n 's/^CreationDate:\(.*\)$/\1/p'`
+
+	date=`date -d "$date_raw" +"%Y-%m-%d" 2> /dev/null`
+	if [[ $? -eq 1 ]]; then
+		date_raw=`echo "$pdf_info" | sed -n 's/^ModDate:\(.*\)$/\1/p'`
+
+		date=`date -d "$date_raw" +"%Y-%m-%d" 2> /dev/null`
+		if [[ $? -eq 1 ]]; then
+			exit 1
+		fi
+
+	fi
+	echo "$date"
+	exit 0
+else
+	exit 1
+fi

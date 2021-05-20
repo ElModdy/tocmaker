@@ -1,24 +1,5 @@
 #!/bin/bash
 
-
-function resize {
-	dim=(`pdfinfo "$1" 2> /dev/null | grep "Page size" | grep -Eo '[-+]?[0-9]*\.?[0-9]+'`)
-
-	[[ $? -eq 1 || ${#dim[@]} -ne 2 ]] && return
-	w="${dim[0]}"
-	h="${dim[1]}"
-
-	if [[ $w -gt $h ]]; then
-		w_out=297
-		h_out=`bc <<< "scale=2; $w / $h * $w_out"`
-	else
-		h_out=297
-		w_out=`bc <<< "scale=2; $h / $w * $h_out"`
-	fi
-
-	pdfjam --outfile "$1" --papersize "{${h_out}mm,${w_out}mm}" "$1" &>/dev/null
-}
-
 red=`tput setaf 1`
 green=`tput setaf 2`
 bold=`tput bold`
@@ -32,22 +13,13 @@ path="/home/usr/repos/tocmaker/"
 
 cp "${path}blank.pdf" "${path}preview.pdf"
 
-(qpdfview "${path}preview.pdf" &> /dev/null &)
+(okular "${path}preview.pdf" &> /dev/null &)
 
 read -p "Press ${bold}<Enter>${reset} to continue"
 
 for f in ./*.pdf; do
-	pdf_info=`pdfinfo "$1" 2> /dev/null` | sed -n 's/^CreationDate:\(.*\)$/\1/p'`
-	if [[ $? -eq 0  ]];then
-		data_raw=`echo "$pdf_info" | sed -n 's/^CreationDate:\(.*\)$/\1/p'`
-
-		date=`date -d "$date_raw" +"%Y-%m-%d"`
-		if [[ $? -eq 1 ]]; then
-			data_raw=`echo "$pdf_info" | sed -n 's/^ModDate:\(.*\)$/\1/p'`
-
-			date=`date -d "$date_raw" +"%Y-%m-%d"`
-		fi
-	else
+	date=`pdfdate "$f"`
+	if [[ $? -eq 1 ]]; then
 		date="9999-99-99"
 	fi
 
@@ -55,7 +27,6 @@ for f in ./*.pdf; do
 
 	pdfs+=("${name}@${date}")
 done
-
 
 OIFS=$IFS
 IFS=$'\n'
@@ -78,7 +49,7 @@ do
 	echo -e "${bold}${red}curr:${reset}\t${curr_name}.pdf"
 	echo -e "${bold}${green}sugg:${reset}\t${suggested_name}.pdf"
 
-	resize "${curr_name}.pdf"
+	rspdf "${curr_name}.pdf"
 
 	read -p 'Ans: ' ans
 
@@ -100,7 +71,6 @@ do
 	mv "${curr_name}.pdf" "${ans}.pdf" &> /dev/null
 done
 
-wmctrl -lp | awk '/preview - qpdfview/{print $3}' |
-xargs kill
+#wmctrl -lp | awk '/preview - qpdfview/{print $3}' | xargs kill
 
 rm "${path}preview.pdf"

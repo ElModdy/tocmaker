@@ -5,17 +5,8 @@
 	exit 0
 }
 
-pdf_info=`pdfinfo "$1" 2> /dev/null` | sed -n 's/^CreationDate:\(.*\)$/\1/p'`
-if [[ $? -eq 0  ]];then
-	data_raw=`echo "$pdf_info" | sed -n 's/^CreationDate:\(.*\)$/\1/p'`
-
-	date=`date -d "$date_raw" +"%Y-%m-%d"`
-	if [[ $? -eq 1 ]]; then
-		data_raw=`echo "$pdf_info" | sed -n 's/^ModDate:\(.*\)$/\1/p'`
-
-		date=`date -d "$date_raw" +"%Y-%m-%d"`
-	fi
-else
+date=`pdfdate "$1"`
+if [[ $? -eq 1 ]]; then
 	date="9999-99-99"
 fi
 
